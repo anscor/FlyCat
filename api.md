@@ -38,9 +38,20 @@
 
 * Response:
     ```
-    //成功时返回success(200)并附加Token，失败时返回failed(400)并且不会附加Token
+    //成功时返回success(200)并附加Token
     {
-        "status": "success/failed",
+        "status": "success",
+        "merchant": {
+            "id": 1,
+            "alias": "test",
+            "account": 12345678,
+            "register_time": "2018-10-26 16:39:58",
+            "money": 1234.5
+        }
+    }
+    //失败时返回failed(400)并且不会附加Token
+    {
+        "status": "failed",
         "msg": "message"
     }
     ```
@@ -286,9 +297,20 @@
 
 * Response:
     ```
-    //成功时返回success(200)并附加Token，失败时返回failed(400)并且不会附加Token
+    //成功时返回success(200)并附加Token
     {
-        "status": "success/failed",
+        "status": "success",
+        "purchaser": {
+            "id": 1,
+            "alias": "test",
+            "account": 12345678,
+            "register_time": "2018-10-26 16:39:58",
+            "blance": 1234.5
+        }
+    }
+    //失败时返回failed(400)并且不会附加Token
+    {
+        "status": "failed",
         "msg": "message"
     }
     ```
@@ -301,7 +323,7 @@
     ```
     {
         "status": "success/falied",
-        "merchant": {
+        "purchaser": {
             "id": 1,
             "alias": "test",
             "account": 12345678,

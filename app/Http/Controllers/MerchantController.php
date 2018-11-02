@@ -96,7 +96,7 @@ class MerchantController extends Controller
 
         return response([
             'status' => 'success',
-            'msg' => '',
+            'merchant' => $user,
         ], 200)
             ->header('Authorization', $token);
     }
@@ -162,7 +162,9 @@ class MerchantController extends Controller
             ], $res['code']);
         }
 
-        if ($request->money && ($request->money < 1000 || $request->money > 50000)) {
+        $data = json_decode($request->getContent());
+
+        if ($data->money && ($data->money < 1000 || $data->money > 50000)) {
             return response([
                 'status' => 'failed',
                 'msg' => 'money out of range.',
@@ -171,9 +173,9 @@ class MerchantController extends Controller
 
         $user = Merchant::find($muid);
 
-        $user->alias = $request->alias ? $request->alias : $user->alias;
-        $user->money = $request->money ? $request->money : $user->money;
-        $user->password = $request->password ? bcrypt($request->password) : $user->password;
+        $user->alias = $data->alias ? $data->alias : $user->alias;
+        $user->money = $data->money ? $data->money : $user->money;
+        $user->password = $data->password ? bcrypt($data->password) : $user->password;
         $user->save();
 
         return response([
@@ -269,42 +271,34 @@ class MerchantController extends Controller
             ], $res['code']);
         }
 
-        if (!DB::table('commodities')
-            ->where('id', $cid)->exists()) {
+        if (!Commodity::find($cid)) {
             return response([
                 'status' => 'failed',
                 'msg' => 'commodity does not exist.',
             ], 404);
         }
 
-        $number =$request->count - DB::table('commodities')
-            ->where([
-                ['id', $cid],
-                ['owner', $muid]
-            ])->first()->count;
+        $data = json_decode($request->getContent());
+        $number = $data->count - Commodity::find($cid)->count;
         
-        if ($request->count < 1 || $request->count > 100) {
+        if ($data->count < 1 || $data->count > 100) {
             return response([
                 'status' => "failed",
                 'msg' => 'count out of range.',
             ], 200);
         }
 
-        if ($request->price < 10 || $request->price > 1000) {
+        if ($data->price < 10 || $data->price > 1000) {
             return response([
                 'status' => "failed",
                 'msg' => 'price out of range.',
             ], 200);
         }
 
-         DB::table('commodities')
-            ->where([
-                ['id', $cid],
-                ['owner', $muid]
-            ])->update([
-                'count' => $request->count,
-                'price' => $request->price,
-                'name' => $request->name,
+        Commodity::find($cid)->update([
+                'count' => $data->count,
+                'price' => $data->price,
+                'name' => $data->name,
             ]);
         
         if ($number != 0) {
@@ -334,25 +328,16 @@ class MerchantController extends Controller
             ], $res['code']);
         }
 
-        if (!DB::table('commodities')
-            ->where('id', $cid)->exists()) {
+        if (!Commodity::find($cid)) {
             return response([
                 'status' => 'failed',
                 'msg' => 'commodity does not exist.',
             ], 404);
         }
 
-        $number = 0 - DB::table('commodities')
-            ->where([
-                ['id', $cid],
-                ['owner', $muid]
-            ])->first()->count;
+        $number = 0 - Commodity::find($cid)->count;
         
-        DB::table('commodities')
-            ->where([
-                ['id', $cid],
-                ['owner', $muid]
-            ])->update(['count' => 0]);
+        Commodity::find($cid)->update(['count' => 0]);
         
         $commodity_record = new Commodity_record;
         $commodity_record->commodity_id = $cid;

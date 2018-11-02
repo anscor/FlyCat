@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Commodity;
 use App\Commodity_record;
 use App\Log_record;
+use App\Merchant;
 use App\Order_record;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -92,7 +93,7 @@ class PurchaserController extends Controller
 
         return response([
             'status' => 'success',
-            'msg' => '',
+            'purchaser' => $user,
         ], 200)
             ->header('Authorization', $token);
     }
@@ -158,7 +159,9 @@ class PurchaserController extends Controller
             ], $res['code']);
         }
 
-        if ($request->blance && ($request->blance < 1000 || $request->blance > 50000)) {
+        $data = json_decode($request->getContent());
+
+        if ($data->blance && ($data->blance < 1000 || $data->blance > 50000)) {
             return response([
                 'status' => 'failed',
                 'msg' => 'blance out of range.',
@@ -167,9 +170,9 @@ class PurchaserController extends Controller
 
         $user = Purchaser::find($puid);
 
-        $user->alias = $request->alias ? $request->alias : $user->alias;
-        $user->blance = $request->blance ? $request->blance : $user->blance;
-        $user->password = $request->password ? bcrypt($request->password) : $user->password;
+        $user->alias = $data->alias ? $data->alias : $user->alias;
+        $user->blance = $data->blance ? $data->blance : $user->blance;
+        $user->password = $data->password ? bcrypt($data->password) : $user->password;
         $user->save();
 
         return response([
@@ -213,6 +216,20 @@ class PurchaserController extends Controller
                 'msg' => 'count is so large.',
             ], 400);
         }
+
+        if ($user->blance < $commodity->price * $request->count) {
+            return response([
+                'status' => 'failed',
+                'msg' => 'blance is not enough.',
+            ], 400);
+        }
+
+        $user->blance -= $commodity->price * $request->count;
+        $user->save();
+
+        $merchant = Merchant::find($commodity->owner);
+        $merchant->money += $commodity->price * $request->count;
+        $merchant->save();
 
         $commodity->count -= $request->count;
         $commodity->save();
